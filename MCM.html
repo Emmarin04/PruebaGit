@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicación Educativa MCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color:  #d5d5d5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background: #93dbe6;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #resultado, #explicacion {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .multiplo {
+            color: blue;
+        }
+
+        .mcm {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aplicación Educativa: Mínimo Común Múltiplo (MCM)</h1>
+        <h3><p>Designed by:Carlos A. (Mistral AI)</p></h3>
+        <p>Introduce varios números separados por comas para calcular su MCM:</p>
+        <input type="text" id="numeros" placeholder="Ej. 2, 4, 8">
+        <button onclick="calcularMCM()">Calcular MCM</button>
+        <div id="resultado"></div>
+        <div id="explicacion"></div>
+    </div>
+    <script>
+        function calcularMCM() {
+            const input = document.getElementById('numeros').value;
+            const numeros = input.split(',').map(num => parseInt(num.trim()));
+
+            if (numeros.some(isNaN)) {
+                document.getElementById('resultado').innerText = 'Por favor, introduce números válidos separados por comas.';
+                document.getElementById('explicacion').innerHTML = '';
+                return;
+            }
+
+            let maximo = Math.max(...numeros);
+            let mcm = maximo;
+
+            while (true) {
+                if (numeros.every(num => mcm % num === 0)) {
+                    break;
+                }
+                mcm += maximo;
+            }
+
+            let explicacion = numeros.map(num => {
+                let multiplos = [];
+                for (let i = num; i <= mcm; i += num) {
+                    if (i === mcm) {
+                        multiplos.push(`<span class="mcm">${i}</span>`);
+                    } else {
+                        multiplos.push(`<span class="multiplo">${i}</span>`);
+                    }
+                }
+                return `${num}: {${multiplos.join(', ')}}`;
+            }).join('<br>');
+
+            document.getElementById('resultado').innerHTML = `El MCM (${input}) = <span class="mcm">${mcm}</span>`;
+            document.getElementById('explicacion').innerHTML = explicacion;
+        }
+    </script>
+
+</body>
+</html>
