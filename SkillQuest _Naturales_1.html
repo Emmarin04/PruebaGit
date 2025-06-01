@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillQuest: Operaciones con Números Naturales</title>
+    <style>
+        /* Estilos Generales */
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #f5973d, #007ddc);
+            margin: 0;
+            height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        #game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 480px;
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            animation: glow 1.5s infinite;
+        }
+        #question-container {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #answer-input {
+            font-size: 1em;
+            padding: 10px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: none;
+            width: 60%;
+        }
+        button, select {
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        #feedback {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        #score-container, #timer-container {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #6a11cb, 0 0 40px #6a11cb; }
+            50% { text-shadow: 0 0 20px #fff, 0 0 30px #2575fc, 0 0 40px #2575fc; }
+            100% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #6a11cb, 0 0 40px #6a11cb; }
+        }
+
+        /* Explicación Paso a Paso */
+        #solution-container {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.1em;
+            color: #ffeb3b;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+            #question-container {
+                font-size: 1.2em;
+            }
+            #answer-input {
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>SkillQuest</h1>
+        <div>
+            <label for="level-select">Selecciona el nivel: </label>
+            <select id="level-select">
+                <option value="0">1</option>
+                <option value="1">2</option>
+                <option value="2">3</option>
+                <option value="3">4</option>
+                <option value="4">5</option>
+            </select>
+        </div>
+        <div id="question-container"></div>
+        <input type="number" id="answer-input" placeholder="Tu respuesta">
+        <button id="submit-btn">Enviar</button>
+        <div id="feedback"></div>
+        <div id="solution-container"></div>
+        <div id="score-container">Puntuación: <span id="score">0</span></div>
+        <div id="timer-container">Tiempo restante: <span id="timer">60</span> segundos</div>
+        <button id="start-btn">Iniciar Juego</button>
+        <button id="end-btn">Terminar Juego</button>
+    </div>
+    <script>
+        const levels = [
+            { min: 1, max: 10, operations: ['+', '-'] },
+            { min: 1, max: 20, operations: ['+', '-', '*'] },
+            { min: 1, max: 50, operations: ['+', '-', '*', '/'] },
+            { min: 1, max: 100, operations: ['+', '-', '*', '/'] },
+            { min: 1, max: 200, operations: ['+', '-', '*', '/'] }
+        ];
+        let currentLevel = 0;
+        let score = 0;
+        let correctAnswers = 0;
+        let questionsAsked = 0;
+        let timeLeft = 60;
+        let timerInterval;
+        let gameInProgress = false;
+        let currentAnswer;
+        let currentQuestion;
+
+        function generateQuestion() {
+            const level = levels[currentLevel];
+            const num1 = Math.floor(Math.random() * (level.max - level.min + 1)) + level.min;
+            let num2 = Math.floor(Math.random() * (level.max - level.min + 1)) + level.min;
+            const operation = level.operations[Math.floor(Math.random() * level.operations.length)];
+            let answer;
+
+            // Asegurar que la división sea exacta
+            if (operation === '/') {
+                while (num1 % num2 !== 0 || num2 === 0) {
+                    num1 = Math.floor(Math.random() * (level.max - level.min + 1)) + level.min;
+                    num2 = Math.floor(Math.random() * (level.max - level.min + 1)) + level.min;
+                }
+                answer = num1 / num2;
+            } else {
+                switch (operation) {
+                    case '+': answer = num1 + num2; break;
+                    case '-': answer = num1 - num2; break;
+                    case '*': answer = num1 * num2; break;
+                }
+            }
+
+            currentQuestion = `${num1} ${operation} ${num2}`;
+            document.getElementById('question-container').textContent = `¿Cuánto es ${currentQuestion}?`;
+            currentAnswer = answer;
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseFloat(document.getElementById('answer-input').value);
+            const feedback = document.getElementById('feedback');
+            const solutionContainer = document.getElementById('solution-container');
+
+            if (userAnswer === currentAnswer) {
+                score++;
+                correctAnswers++;
+                feedback.textContent = "¡Correcto!";
+                feedback.style.color = "green";
+                solutionContainer.style.display = "none"; // Ocultar solución si acierta
+            } else {
+                feedback.textContent = "Incorrecto.";
+                feedback.style.color = "red";
+
+                // Mostrar solución paso a paso
+                solutionContainer.style.display = "block";
+                solutionContainer.textContent = `Solución paso a paso:\n${currentQuestion} = ${currentAnswer}`;
+                setTimeout(() => {
+                    solutionContainer.style.display = "none";
+                }, 10000); // Mostrar durante 10 segundos
+            }
+
+            document.getElementById('score').textContent = score;
+            questionsAsked++;
+
+            // Limpiar el campo de entrada
+            document.getElementById('answer-input').value = '';
+
+            if (correctAnswers >= 15 && currentLevel < levels.length - 1) {
+                currentLevel++;
+                correctAnswers = 0;
+                questionsAsked = 0;
+                document.getElementById('level-select').value = currentLevel;
+                feedback.textContent = "¡Felicidades! Has avanzado al siguiente nivel.";
+                feedback.style.color = "yellow";
+            }
+            if (questionsAsked >= 20) {
+                endGame();
+            } else {
+                generateQuestion();
+            }
+        }
+
+        function startGame() {
+            gameInProgress = true;
+            currentLevel = parseInt(document.getElementById('level-select').value);
+            score = 0;
+            correctAnswers = 0;
+            questionsAsked = 0;
+            timeLeft = 60;
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('feedback').textContent = "";
+            document.getElementById('answer-input').value = "";
+            generateQuestion();
+            startTimer();
+        }
+
+        function endGame() {
+            gameInProgress = false;
+            clearInterval(timerInterval);
+            document.getElementById('feedback').textContent = "¡Juego terminado! Tu puntuación final es: " + score;
+            document.getElementById('feedback').style.color = "yellow";
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', checkAnswer);
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('end-btn').addEventListener('click', endGame);
+    </script>
+</body>
+</html>
